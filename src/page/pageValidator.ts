@@ -1,21 +1,26 @@
-import validationSchema from "../../utils/validateSchema";
+import validationSchema from "../../utils/validateSchema"
+import validationErrorHandler from "../middlewares/validationErrorHandler"
 
-// ADD SUPPLIER VALIDATION:
-export const addDemoValidation = [
-  ...validationSchema.body.requiredText([
-    "requiredText1",
-    "requiredText2",
-    "nestedObj.requiredText3",
-  ]),
-  ...validationSchema.body.text([
-    "optionText1",
-    "optionalText2",
-    "nestedObject.optionalText3",
-  ]),
-  ...validationSchema.body.number(["businessContactPerson.phoneNo"]),
-  ...validationSchema.body.array([
-    "bidEmails",
-    "projectsEmail",
-    "accountsEmail",
-  ]),
-];
+
+
+export const addPageValidation=[
+    ...validationSchema?.body?.requiredText(["title","document","authorName","authorEmail",]),
+    validationErrorHandler
+   
+  ]
+
+
+  export const getPageByIdValidation = [
+    ...validationSchema?.param?.mongooseId(['id']),
+    validationErrorHandler
+  ];
+
+  export const deletePageValidation = [
+    ...validationSchema?.param?.mongooseId(['id']),
+    validationErrorHandler
+  ]
+  
+  export const updatePageValidation = [
+    ...validationSchema?.param?.mongooseId(['id']),
+    validationErrorHandler
+  ]
