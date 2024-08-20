@@ -4,7 +4,7 @@ import validationErrorHandler from "../middlewares/validationErrorHandler"
 
 
 export const addPageValidation=[
-    ...validationSchema?.body?.requiredText(["title","document","authorName","authorEmail",]),
+    ...validationSchema?.body?.requiredText(["title","userId"]),
     validationErrorHandler
    
   ]

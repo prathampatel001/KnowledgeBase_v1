@@ -2,11 +2,12 @@ import mongoose, { Document, Schema } from "mongoose";
 
 export interface PageInterface extends Document {
   title: string;
-  document?: any;//Document can be text or image
-  authorName?: string;
-  authorEmail: string;
+  content?: any;//Document can be text or image
+  userId:mongoose.Types.ObjectId;
+//   authorName?: string;
+//   authorEmail: string;
   //   isDeleted?: Boolean;
-  collectionId?: mongoose.Types.ObjectId; // Only for those pages which diretly comes under the document,
+  documentId?: mongoose.Types.ObjectId; // Only for those pages which diretly comes under the document,
   pageNestedUnder?: [{ type: mongoose.Types.ObjectId }]; // any; //An array of the Ids which are nested under this page, (max:3).
   // Only for those pages which comes under some other pages (nested)
 }
@@ -17,15 +18,20 @@ const ObjectIdReference = { type: mongoose.Schema.Types.ObjectId, ref: "page" };
 const pageSchema = new Schema<PageInterface>({
   title: { type: String },
   // document: { type: Array, default: [] },
-  document: {
+  content: {
     type: Schema.Types.Mixed,
   },
-  authorName: { type: String },
-  authorEmail: { type: String },
-  //   isDeleted: { type: Boolean, default: false },
-  collectionId: {
+  userId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "collection",
+    ref: 'user', // Reference to the User model
+    required: true,
+  },
+//   authorName: { type: String },
+//   authorEmail: { type: String },
+  //   isDeleted: { type: Boolean, default: false },
+  documentId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "document",
   },
   
   pageNestedUnder: { type:[ObjectIdReference], default: [] },
