@@ -6,14 +6,14 @@ interface Config{
     port:string |undefined,
     mongooseConnection:string|undefined,
     env:string|undefined,
-    redisConnection:string|undefined
+   // redisConnection:string|undefined
 }
 
 const _config:Config = {
   port: process.env.PORT,
   mongooseConnection: process.env.MONGOOSE_CONNECTION,
   env: process.env.NODE_ENV,
-  redisConnection: process.env.REDIS_CONNECTION,
+  //redisConnection: process.env.REDIS_CONNECTION,
 };
 
 export const config = {

@@ -1,26 +1,44 @@
+import { NextFunction, Request, Response } from "express";
+import jwt, { JwtPayload } from "jsonwebtoken";
+import { config as envConfig } from "dotenv";
+envConfig()
 
-import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
+const secret = process.env.JWT_KEY;
 
+export interface AuthenticatedRequest extends Request {
+    user?: string | JwtPayload;
+}
 
-const SECRET_KEY = process.env.JWT_SECRET || 'your_jwt_secret';
+export const authenticate = (req: AuthenticatedRequest, res: Response, next: NextFunction): any => {
+    const authToken = req.headers.authorization;
 
-export const authenticateToken = (req: Request, res: Response, next: NextFunction) => {
-    
-    const token = req.header('Authorization');
-    // console.log("err=>",token);
+    if (!authToken || !authToken.startsWith("Bearer ")) {
+        return res.status(401).json({
+            message: "No token, authorization denied",
+        });
+    }
 
-  if (!token) {
-    return res.status(401).json({ message: 'Access denied, no token provided' });
-  }
+    try {
+        const token = authToken.split(" ")[1];
 
-  try {
-    const decoded = jwt.verify(token, SECRET_KEY);
-    console.log("decoded token=>",decoded);
-    
-    req.headers.userId = (decoded as any).userId;
-    next();
-  } catch (error) {
-    res.status(400).json({ message: 'Invalid token' });
-  }
+        if (!secret) {
+            throw new Error("JWT_KEY is not defined in environment variables");
+        }
+
+        const user = jwt.verify(token, secret);
+        req.user = user;
+
+        next();
+    } catch (err: any) {
+        if (err.name === "TokenExpiredError") {
+            return res.status(401).json({ message: "Token is expired" });
+        }
+        if (err.name === "JsonWebTokenError") {
+            console.log("Invalid token:", err);
+            return res.status(401).json({ message: "Invalid token" });
+        }
+
+        console.error('Token verification error:', err);
+        return res.status(500).json({ message: "An error occurred during token verification" });
+    }
 };
