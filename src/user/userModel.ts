@@ -7,7 +7,7 @@ enum UserType {
 }
 
 // Define the User interface extending the Document interface from mongoose
-interface IUser extends Document {
+export interface IUser extends Document {
   name: string;
   userType: UserType;
   email: string;

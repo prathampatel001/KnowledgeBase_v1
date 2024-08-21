@@ -4,6 +4,7 @@ import authRoute from "./auth/authRoutes";
 import cors from "cors";
 import pageRoutes from "./page/pageRoutes";
 import userRoute from "./user/userRoutes";
+import categoryRoute from "./category/categoryRoutes";
 const app = express();
 app.use(express.json());
 app.use(cors());
@@ -17,6 +18,7 @@ app.get(`/test`, (req, res, next) => {
 
 app.use("/auth", authRoute);
 app.use("/user", userRoute);
+app.use("/category", categoryRoute)
 
 // global error handle
 app.use(globalErrorHandler);

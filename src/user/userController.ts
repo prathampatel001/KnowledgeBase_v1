@@ -1,7 +1,7 @@
 import { Response } from 'express';
 import User from './userModel';
 import bcrypt from 'bcryptjs';
-import { AuthenticatedRequest } from '../middlewares/auth';
+import { AuthenticatedRequest } from '../middlewares/authentication';
 
 // Define the interface for the update fields
 interface UpdateFields {
