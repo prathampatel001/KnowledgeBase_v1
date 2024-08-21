@@ -6,8 +6,8 @@ import {  Page, PageInterface } from './pageModel';
 export const addPage = async (req:Request,res:Response,next:NextFunction)  => {
 
   try {
-    const newDocument: PageInterface = req.body;
-    const page = new Page(newDocument);
+    const newPage: PageInterface = req.body;
+    const page = new Page(newPage);
     const savedPage = await page.save();
 
     //Delete the cached Pages
@@ -98,6 +98,7 @@ export const getPageById = async (req: Request, res: Response, next: NextFunctio
           }
         }
       })
+      .populate('documentId')
       .populate({
         path: 'userId',
         select: 'name email',
@@ -146,6 +147,7 @@ export const getAllPages = async (req: Request, res: Response, next: NextFunctio
           }
         }
       })
+      .populate('documentId')
       .populate({
         path: 'userId',
         select: 'name email',
