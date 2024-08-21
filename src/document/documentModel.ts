@@ -1,42 +1,63 @@
-import mongoose, { Document, Schema } from "mongoose";
+import mongoose, { Document, Schema } from 'mongoose';
 
+// Define the interface for the Document model
 export interface DocumentInterface extends Document {
-documentName: string;
-  status: string; // Draft/ Public
-  createdByUserId:mongoose.Types.ObjectId;
-//   createdBy: string;
-//   email: string;
+  documentName: string;
+  status: string; // Using string here to match the custom validation
+  createdByUserId: mongoose.Types.ObjectId;
   description: string;
   contributors?: mongoose.Types.ObjectId[];
-  category?: mongoose.Types.ObjectId;
+  category: mongoose.Types.ObjectId;
   favourite: boolean;
 }
 
-const documentSchema = new Schema<DocumentInterface>(
-  {
-    documentName: { type: String },
-    status: { type: String, default: "Draft" },
-    description: { type: String },
-    createdByUserId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'user', // Reference to the User model()
-        required: true,
-      },
+// Function to validate the status value
+function validateCategories(value: string): boolean {
+  const allowedCategories = ['Draft', 'Public'];
+  return allowedCategories.includes(value);
+}
 
+// Define the schema for the Document model
+export const DocumentSchema = new Schema<DocumentInterface>(
+  {
+    documentName: {
+      type: String,
+      required: true, // Ensuring that documentName is required
+    },
+    status: {
+      type: String,
+      validate: {
+        validator: validateCategories, // Using custom validation function
+        message: (props: { value: string }) => `${props.value} is not a valid status`, // Custom error message
+      },
+      default: 'Draft',
+    },
+    description: {
+      type: String,
+      required: true, // Ensuring that description is required
+    },
+    createdByUserId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User', // Reference to the User model
+      required: true,
+    },
     contributors: [
-        {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: 'Contributor', // Reference to the Contributor model
-        }],
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Contributor', // Reference to the Contributor model
+      },
+    ],
     category: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "category",
-    }, // For v2, we can create a new DB for categories and can join it with this,
-
-    favourite: { type: Boolean, default: false },
+      ref: 'Category', // Reference to the Category model
+    },
+    favourite: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true }
 );
 
-const newDocumentName = "document";
-export const DocumentModel = mongoose.model<DocumentInterface>(newDocumentName, documentSchema);
+// Create and export the Document model
+export const DocumentModel = mongoose.model<DocumentInterface>('Document', DocumentSchema);

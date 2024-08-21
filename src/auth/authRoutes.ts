@@ -3,7 +3,7 @@ import { createUser, loginUser } from "./authController";
 
 const authRoute = Router();
 
-authRoute.post("/register", createUser);
-authRoute.post("/login", loginUser);
+authRoute.post("/auth/register", createUser);
+authRoute.post("/auth/login", loginUser);
 
 export default authRoute;

@@ -8,24 +8,25 @@ import contributorRoutes from "./contributor/contributorRoutes";
 
 import userRoute from "./user/userRoutes";
 import categoryRoute from "./category/categoryRoutes";
+import { authenticate } from "./middlewares/authentication";
+import documentRoute from "./document/documentRoutes";
 
 const app = express();
 app.use(express.json());
 app.use(cors());
 
 const basePath = "/api";
-
-app.use(basePath,pageRoutes)
-app.use(basePath,contributorRoutes)
-
-
 app.get(`/test`, (req, res, next) => {
   res.json({ message: "Hello World" });
 });
 
-app.use("/auth", authRoute);
-app.use("/user", userRoute);
-app.use("/category", categoryRoute)
+app.use(basePath, authRoute);
+app.use(authenticate)
+app.use(basePath,pageRoutes)
+app.use(basePath, documentRoute)
+app.use(basePath,contributorRoutes)
+app.use(basePath, userRoute);
+app.use(basePath, categoryRoute)
 
 // global error handle
 app.use(globalErrorHandler);

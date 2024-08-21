@@ -30,7 +30,7 @@ export const createCategory = async (req: AuthenticatedRequest, res: Response) =
         // Create and save the new category
         const newCategory = new Category({
             categoryName: categoryName.trim(), // Sanitize by trimming
-            categoryCreatedBy: user._id, // Use ObjectId for reference
+            categoryCreatedBy: user.id, // Use ObjectId for reference
             isActive,
         });
 
