@@ -3,10 +3,10 @@ import { addContributor, deleteContributor, getAllContributors, getContributorBy
 
 const router = express.Router()
 
-router.route('./contributor').post(addContributor)
-router.route('./contributor').get(getAllContributors)
-router.route('./contributor/:id').get(getContributorById)
-router.route('./contributor').put(updateContributor)
-router.route('./contributor').delete(deleteContributor)
+router.route('/contributor').post(addContributor)
+router.route('/contributor').get(getAllContributors)
+router.route('/contributor/:id').get(getContributorById)
+router.route('/contributor/:id').put(updateContributor)
+router.route('/contributor/:id').delete(deleteContributor)
 
 export default router

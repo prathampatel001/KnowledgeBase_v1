@@ -1,3 +1,4 @@
+
 import { Router } from "express";
 import { addDocument, deleteDocument, getAllDocuments, getDocumentById, updateDocument } from "./documentController";
 
@@ -10,3 +11,4 @@ documentRoute.put('/document/update/:id', updateDocument)
 documentRoute.delete('/document/delete/:id', deleteDocument)
 
 export default documentRoute
+

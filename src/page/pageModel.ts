@@ -4,9 +4,6 @@ export interface PageInterface extends Document {
   title: string;
   content?: any;//Document can be text or image
   userId:mongoose.Types.ObjectId;
-//   authorName?: string;
-//   authorEmail: string;
-  //   isDeleted?: Boolean;
   documentId?: mongoose.Types.ObjectId; // Only for those pages which diretly comes under the document,
   pageNestedUnder?: [{ type: mongoose.Types.ObjectId }]; // any; //An array of the Ids which are nested under this page, (max:3).
   // Only for those pages which comes under some other pages (nested)
@@ -23,12 +20,10 @@ const pageSchema = new Schema<PageInterface>({
   },
   userId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'user', // Reference to the User model
+    ref: 'User', // Reference to the User model
     required: true,
   },
-//   authorName: { type: String },
-//   authorEmail: { type: String },
-  //   isDeleted: { type: Boolean, default: false },
+
   documentId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "document",
