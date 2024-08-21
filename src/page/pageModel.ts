@@ -26,7 +26,7 @@ const pageSchema = new Schema<PageInterface>({
 
   documentId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "document",
+    ref: "Document",
   },
   
   pageNestedUnder: { type:[ObjectIdReference], default: [] },
