@@ -95,10 +95,8 @@ export const updateDocument = async (req: AuthenticatedRequest, res: Response, n
     if (!updatedDocument) {
       return res.status(404).json({ message: 'Document not found' });
     }
-  }catch (error){
-    next(error); 
-  }
-  };
+  }catch()
+  
   
 
 
