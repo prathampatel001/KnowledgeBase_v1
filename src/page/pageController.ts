@@ -18,7 +18,7 @@ export const addPage = async (req:AuthenticatedRequest,res:Response,next:NextFun
     // Create the new page, associating it with the logged-in user's ID
     const newPage: PageInterface = {
       ...req.body,
-      userId: user._id, // Automatically associate the page with the logged-in user's ID
+      userId: user.id, // Automatically associate the page with the logged-in user's ID
     };
 
     const page = new Page(newPage);
