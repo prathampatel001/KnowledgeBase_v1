@@ -95,12 +95,8 @@ export const updateDocument = async (req: AuthenticatedRequest, res: Response, n
     if (!updatedDocument) {
       return res.status(404).json({ message: 'Document not found' });
     }
-
-    res.status(200).json(updatedDocument);
-  } catch (error) {
-    next(error);
-  }
-};
+  };
+  
 
 
 // Get a specific Document by ID

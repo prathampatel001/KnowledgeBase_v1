@@ -1,11 +1,26 @@
 
 import { Request, Response, NextFunction } from 'express';
 import { Contributor, ContributorInterface } from './contributorModel';
+import { IUser } from '../user/userModel';
+import { AuthenticatedRequest } from '../middlewares/authentication';
 
 // Create new Contributor
-export const addContributor = async (req: Request, res: Response, next: NextFunction) => {
+export const addContributor = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
-    const newContributor: ContributorInterface = req.body;
+
+    const user = req.user as IUser; // Assuming req.user contains the logged-in user's details
+
+    // Ensure user is authenticated and has necessary permissions
+    if (!user) {
+      return res.status(401).json({ message: 'Unauthorized: User not found or not authenticated.' });
+    }
+
+    // Create the new contributor, associating it with the logged-in user's ID
+    const newContributor: ContributorInterface = {
+      ...req.body,
+      userId: user.id, // Automatically associate the contributor with the logged-in user's ID
+      email: req.body.email || user.email, // Optionally use user's email if not provided in the body
+    };
     const contributor = new Contributor(newContributor);
     const savedContributor = await contributor.save();
 

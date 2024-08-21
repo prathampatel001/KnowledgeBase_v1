@@ -6,7 +6,6 @@ export interface DocumentInterface extends Document {
   status: string; // Using string here to match the custom validation
   createdByUserId: mongoose.Types.ObjectId;
   description: string;
-  contributors?: mongoose.Types.ObjectId[];
   category: mongoose.Types.ObjectId;
   favourite: boolean;
 }
@@ -41,12 +40,6 @@ export const DocumentSchema = new Schema<DocumentInterface>(
       ref: 'User', // Reference to the User model
       required: true,
     },
-    contributors: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Contributor', // Reference to the Contributor model
-      },
-    ],
     category: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Category', // Reference to the Category model
