@@ -1,9 +1,9 @@
 import { Router } from "express";
 import { updateUser } from "./userController";
-import { authenticate } from "../middlewares/authentication";
+import { getUserUpdateByIdValidation } from "./userValidator";
 
 const userRoute = Router()
 
-userRoute.put("/user/update/:id", authenticate, updateUser)
+userRoute.put("/user/update/:id", getUserUpdateByIdValidation, updateUser)
 
 export default userRoute;
