@@ -6,8 +6,8 @@ import {  Page, PageInterface } from './pageModel';
 export const addPage = async (req:Request,res:Response,next:NextFunction)  => {
 
   try {
-    const newCollection: PageInterface = req.body;
-    const page = new Page(newCollection);
+    const newPage: PageInterface = req.body;
+    const page = new Page(newPage);
     const savedPage = await page.save();
 
     //Delete the cached Pages
@@ -29,7 +29,7 @@ export const deletePage = async (req: Request, res: Response, next: NextFunction
       return res.status(404).send('Page not found');
     }
 
-    /* redis
+    /* Redis
     // redisClient?.del("allPages")
     // const pageKey = `singlePage:${id}`;
     // await redisClient?.del(pageKey)
@@ -48,7 +48,7 @@ export const updatePage = async (req: Request, res: Response, next: NextFunction
   try {
     const updatedPage = await Page.findByIdAndUpdate(id, req.body);
     if (!updatedPage) {
-      return res.status(404).send('Collection not found');
+      return res.status(404).send('Document not found');
     }
 
     /* Redis
@@ -68,6 +68,8 @@ export const updatePage = async (req: Request, res: Response, next: NextFunction
 export const getPageById = async (req: Request, res: Response, next: NextFunction) => {
   const { id } = req.params;
   try {
+
+
     /* Redis
     // const cacheKey = `singlePage:${id}`;
 
@@ -96,7 +98,11 @@ export const getPageById = async (req: Request, res: Response, next: NextFunctio
           }
         }
       })
-      .populate('collectionId');
+      .populate('documentId')
+      .populate({
+        path: 'userId',
+        select: 'name email',
+      });
 
     if (!page) {
       return res.status(404).send('Page not found');
@@ -141,7 +147,11 @@ export const getAllPages = async (req: Request, res: Response, next: NextFunctio
           }
         }
       })
-      .populate('collectionId')
+      .populate('documentId')
+      .populate({
+        path: 'userId',
+        select: 'name email',
+      })
       .sort({ createdAt: -1 })
       .lean();
 
