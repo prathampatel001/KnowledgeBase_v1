@@ -19,7 +19,7 @@ const documentSchema = new Schema<DocumentInterface>(
     description: { type: String },
     createdByUserId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'user', // Reference to the User model()
+        ref: 'User', // Reference to the User model()
         required: true,
       },
 

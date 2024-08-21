@@ -1,6 +1,7 @@
 import express from "express"
 import { addPage, deletePage, getAllPages, getPageById, updatePage } from "./pageController"
 import { addPageValidation, deletePageValidation, getPageByIdValidation, updatePageValidation } from "./pageValidator"
+import { authenticate } from "../middlewares/authentication"
 const router = express.Router()
 
 router.route("/pages").post(addPageValidation,addPage)

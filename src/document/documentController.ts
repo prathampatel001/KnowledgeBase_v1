@@ -31,18 +31,22 @@ export const deleteDocument = async (req: Request, res: Response, next: NextFunc
 
 // Update Document
 export const updateDocument = async (req: Request, res: Response, next: NextFunction) => {
-  const { id } = req.params;
-  try {
-    const updatedDocument = await DocumentModel.findByIdAndUpdate(id, req.body, { new: true });
-    if (!updatedDocument) {
-      return res.status(404).send('Document not found');
+    const { id } = req.params;
+  
+    try {
+      // Find the document by ID and update it, returning the updated document
+      const updatedDocument = await DocumentModel.findByIdAndUpdate(id, req.body, { new: true });
+  
+      if (!updatedDocument) {
+        return res.status(404).send('Document not found');
+      }
+  
+      res.status(200).json(updatedDocument);
+    } catch (error) {
+      next(error);
     }
-
-    res.status(200).json(updatedDocument);
-  } catch (error) {
-    next(error);
-  }
-};
+  };
+  
 
 // Get a specific Document by ID
 export const getDocumentById = async (req: Request, res: Response, next: NextFunction) => {

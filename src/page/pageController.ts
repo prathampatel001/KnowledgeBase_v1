@@ -1,12 +1,26 @@
 
 import { Request, Response, NextFunction } from 'express';
 import {  Page, PageInterface } from './pageModel';
+import { AuthenticatedRequest } from '../middlewares/authentication';
+import { IUser } from '../user/userModel';
 
 //Create new Page
-export const addPage = async (req:Request,res:Response,next:NextFunction)  => {
+export const addPage = async (req:AuthenticatedRequest,res:Response,next:NextFunction)  => {
 
   try {
-    const newPage: PageInterface = req.body;
+    const user = req.user as IUser; // Assuming req.user contains the logged-in user's details
+
+    // Ensure user is authenticated and has necessary permissions
+    if (!user) {
+      return res.status(401).json({ message: 'Unauthorized: User not found or not authenticated.' });
+    }
+
+    // Create the new page, associating it with the logged-in user's ID
+    const newPage: PageInterface = {
+      ...req.body,
+      userId: user._id, // Automatically associate the page with the logged-in user's ID
+    };
+
     const page = new Page(newPage);
     const savedPage = await page.save();
 
@@ -41,27 +55,24 @@ export const deletePage = async (req: Request, res: Response, next: NextFunction
   }
 };
 
-//Update Page
+// Update Page
 export const updatePage = async (req: Request, res: Response, next: NextFunction) => {
   const { id } = req.params;
-  // const updateData: Partial<CategoryInterface> = req.body;
+
   try {
-    const updatedPage = await Page.findByIdAndUpdate(id, req.body);
+    // Find the document by ID and update it, returning the updated document
+    const updatedPage = await Page.findByIdAndUpdate(id, req.body, { new: true });
+
     if (!updatedPage) {
       return res.status(404).send('Document not found');
     }
-
-    /* Redis
-    redisClient?.del("allPages")
-    const pageKey = `singlePage:${id}`;
-    await redisClient?.del(pageKey)
-    */
 
     res.status(200).json(updatedPage);
   } catch (error) {
     next(error);
   }
 };
+
 
 
 //Get Single Page
