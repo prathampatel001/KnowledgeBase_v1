@@ -2,6 +2,9 @@ import { Request, Response } from 'express';
 import User from '../user/userModel';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { config as envConfig } from 'dotenv';
+
+envConfig()
 
 const JWT_SECRET = process.env.JWT_KEY || 'your_jwt_secret';
 
@@ -36,13 +39,11 @@ export const loginUser = async (req: Request, res: Response) => {
 export const createUser = async (req: Request, res: Response) => {
     try {
       const { name, email, password, profilePhoto } = req.body;
-  
       // Check if the email is already in use
       const existingUser = await User.findOne({ email });
       if (existingUser) {
         return res.status(400).json({ message: 'Email already in use' });
       }
-  
       // Hash the password before saving
       const hashedPassword = await bcrypt.hash(password, 10);
   
@@ -53,11 +54,11 @@ export const createUser = async (req: Request, res: Response) => {
         password: hashedPassword,
         profilePhoto,
       });
-  
       await newUser.save();
   
       return res.status(201).json({ message: 'user created',user: newUser });
     } catch (error) {
+
       return res.status(500).json({ message: 'Server error', error });
     }
   };

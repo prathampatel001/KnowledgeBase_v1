@@ -1,57 +1,47 @@
 import { Request, Response } from 'express';
-import Category from '../category/categoryModel';
-import { IUser } from '../user/userModel';
-import { AuthenticatedRequest } from '../middlewares/authentication';
-import { body, validationResult } from 'express-validator';
+import { z } from 'zod';
+import Category from '../category/categoryModel'; // Adjust the import path as needed
+import { IUser } from '../user/userModel'; // Adjust the import path as needed
+import { AuthenticatedRequest } from '../middlewares/authentication'; // Adjust the import path as needed
 
-/// Input validation middleware
-export const validateCategoryInput = [
-    body('categoryName')
-        .trim()
-        .isString()
-        .notEmpty()
-        .withMessage('Category name is required and must be a string.'),
-    body('isActive')
-        .optional()
-        .isBoolean()
-        .withMessage('isActive must be a boolean value.')
-];
+// Define Zod schema for category input validation
+const categorySchema = z.object({
+    categoryName: z.string().min(1, 'Category name is required.'),
+    isActive: z.boolean().optional(),
+});
 
 // Create a new category
 export const createCategory = async (req: AuthenticatedRequest, res: Response) => {
     // Input validation
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-        return res.status(400).json({ message: 'Invalid input', errors: errors.array() });
-    }
-
     try {
-        const { categoryName, isActive } = req.body;
-        const user = req.user as IUser;
+        const parsed = categorySchema.safeParse(req.body);
+        if (!parsed.success) {
+            return res.status(400).json({ message: 'Invalid input', errors: parsed.error.format() });
+        }
+
+        const { categoryName, isActive } = parsed.data;
 
         // Ensure user is authenticated and has necessary permissions
+        const user = req.user as IUser;
         if (!user) {
             return res.status(401).json({ message: 'Unauthorized: User not found or not authenticated.' });
         }
 
-        // Sanitize inputs (e.g., remove any potential XSS characters)
-        const sanitizedCategoryName = categoryName.trim();
-
         // Create and save the new category
         const newCategory = new Category({
-            categoryName: sanitizedCategoryName,
+            categoryName: categoryName.trim(), // Sanitize by trimming
             categoryCreatedBy: user.id, // Use ObjectId for reference
             isActive,
         });
 
+        // Save to database using Mongoose
         const savedCategory = await newCategory.save();
         res.status(201).json(savedCategory);
     } catch (error) {
         console.error('Error creating category:', error); // Log the error for debugging purposes
-        res.status(500).json({ message: 'Error creating category', error: error });
+        res.status(500).json({ message: 'Error creating category', error: error});
     }
 };
-
 
 // Get all categories
 export const getAllCategories = async (req: Request, res: Response) => {
@@ -59,7 +49,7 @@ export const getAllCategories = async (req: Request, res: Response) => {
         const categories = await Category.find().populate('categoryCreatedBy', 'name email'); // Populate the creator's details
         res.status(200).json(categories);
     } catch (error) {
-        res.status(500).json({ message: 'Error fetching categories', error });
+        res.status(500).json({ message: 'Error fetching categories', error: error});
     }
 };
 
@@ -75,7 +65,7 @@ export const getCategoryById = async (req: Request, res: Response) => {
 
         res.status(200).json(category);
     } catch (error) {
-        res.status(500).json({ message: 'Error fetching category', error });
+        res.status(500).json({ message: 'Error fetching category', error: error });
     }
 };
 
@@ -83,7 +73,12 @@ export const getCategoryById = async (req: Request, res: Response) => {
 export const updateCategory = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
-        const updatedData = req.body;
+        const parsed = categorySchema.safeParse(req.body);
+        if (!parsed.success) {
+            return res.status(400).json({ message: 'Invalid input', errors: parsed.error.format() });
+        }
+
+        const updatedData = parsed.data;
 
         const updatedCategory = await Category.findByIdAndUpdate(id, updatedData, { new: true });
 
@@ -93,7 +88,7 @@ export const updateCategory = async (req: Request, res: Response) => {
 
         res.status(200).json(updatedCategory);
     } catch (error) {
-        res.status(500).json({ message: 'Error updating category', error });
+        res.status(500).json({ message: 'Error updating category', error: error});
     }
 };
 
@@ -109,6 +104,6 @@ export const deleteCategory = async (req: Request, res: Response) => {
 
         res.status(200).json({ message: 'Category deleted successfully' });
     } catch (error) {
-        res.status(500).json({ message: 'Error deleting category', error });
+        res.status(500).json({ message: 'Error deleting category', error: error});
     }
 };

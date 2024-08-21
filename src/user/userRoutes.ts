@@ -4,6 +4,6 @@ import { authenticate } from "../middlewares/authentication";
 
 const userRoute = Router()
 
-userRoute.put("/update_user/:id", authenticate, updateUser)
+userRoute.put("/user/update/:id", authenticate, updateUser)
 
 export default userRoute;
