@@ -3,12 +3,9 @@ import globalErrorHandler from "./middlewares/globalErrorHandler";
 import authRoute from "./auth/authRoutes";
 import cors from "cors";
 import pageRoutes from "./page/pageRoutes";
-
 import contributorRoutes from "./contributor/contributorRoutes";
-
 import userRoute from "./user/userRoutes";
 import categoryRoute from "./category/categoryRoutes";
-
 import documentRoutes from "./document/documentRoutes";
 import { authenticate } from "./middlewares/authentication";
 
