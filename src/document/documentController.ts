@@ -87,7 +87,6 @@ export const updateDocument = async (req: AuthenticatedRequest, res: Response, n
       documentName,
       status,
       description,
-      contributors,
       category,
       favourite,
     }, { new: true });
