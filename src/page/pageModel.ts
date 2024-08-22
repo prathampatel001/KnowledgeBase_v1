@@ -1,36 +1,19 @@
-import mongoose, { Document, Schema } from "mongoose";
+import mongoose, { Schema, Document } from 'mongoose';
 
-export interface PageInterface extends Document {
+interface PageInterface extends Document {
   title: string;
-  content?: any;//Document can be text or image
-  userId:mongoose.Types.ObjectId;
-  documentId?: mongoose.Types.ObjectId; // Only for those pages which diretly comes under the document,
-  pageNestedUnder?: [{ type: mongoose.Types.ObjectId }]; // any; //An array of the Ids which are nested under this page, (max:3).
-  // Only for those pages which comes under some other pages (nested)
+  content: any;
+  contributorId: mongoose.Types.ObjectId[]; // Update to array of ObjectIds
+  documentId: mongoose.Types.ObjectId;
+  pageNestedUnder?: mongoose.Types.ObjectId[];
 }
 
-const ObjectIdReference = { type: mongoose.Schema.Types.ObjectId, ref: "page" };
-
-
 const pageSchema = new Schema<PageInterface>({
-  title: { type: String },
-  // document: { type: Array, default: [] },
-  content: {
-    type: Schema.Types.Mixed,
-  },
-  userId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User', // Reference to the User model
-    required: true,
-  },
+  title: { type: String, required: true },
+  content: { type: Schema.Types.Mixed, required: true },
+  contributorId: [{ type: Schema.Types.ObjectId, ref: 'User', required: true }], // Update to array
+  documentId: { type: Schema.Types.ObjectId, ref: 'Document' },
+  pageNestedUnder: [{ type: Schema.Types.ObjectId, ref: 'Page' }],
+}, { timestamps: true });
 
-  documentId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "document",
-  },
-  
-  pageNestedUnder: { type:[ObjectIdReference], default: [] },
-}, {timestamps: true});
-
-const newPageName="page"
-export const Page = mongoose.model<PageInterface>(newPageName, pageSchema)
+export const Page = mongoose.model<PageInterface>('Page', pageSchema);

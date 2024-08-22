@@ -4,11 +4,11 @@ import { addDocumentValidation, deleteDocumentValidation, getDocumentByIdValidat
 
 const documentRoute = Router();
 
-documentRoute.post('/document/add', addDocumentValidation,addDocument)
+documentRoute.post('/document/add',addDocument)
 documentRoute.get('/document/get', getAllDocuments)
-documentRoute.get('/document/get/:id', getDocumentByIdValidation ,getDocumentById)
-documentRoute.put('/document/update/:id', updateDocumentValidation ,updateDocument)
-documentRoute.delete('/document/delete/:id', deleteDocumentValidation ,deleteDocument)
+documentRoute.get('/document/get/:id' ,getDocumentById)
+documentRoute.put('/document/update/:id' ,updateDocument)
+documentRoute.delete('/document/delete/:id' ,deleteDocument)
 
 export default documentRoute
 
