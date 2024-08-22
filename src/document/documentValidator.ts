@@ -2,7 +2,7 @@ import validationSchema from "../../utils/validateSchema";
 import validationErrorHandler from "../middlewares/validationErrorHandler";
 
 export const addDocumentValidation = [
-  ...validationSchema?.body?.requiredText(["documentName","description","catergory"]),
+  ...validationSchema?.body?.requiredText(["documentName","description","category"]),
   validationErrorHandler
 ];
 

@@ -27,6 +27,7 @@ app.use(basePath, userRoute);
 app.get(`/test`, (req, res, next) => {
   res.json({ message: "Hello World" });
 });
+
 // global error handle
 app.use(globalErrorHandler);
 
