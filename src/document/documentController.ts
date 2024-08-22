@@ -184,4 +184,47 @@ export const getAllDocuments = async (req: Request, res: Response, next: NextFun
       next(error);
     }
   };
+
+
+  // Get all Documents for the logged-in user
+export const getUsersAllDocuments = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  try {
+      const user = req.user as IUser; // Assuming req.user contains the logged-in user's details
+
+      // Ensure user is authenticated
+      if (!user) {
+          return res.status(401).json({ message: 'Unauthorized: User not found or not authenticated.' });
+      }
+
+      const cacheKey = `allDocuments:${user.id}`;
+
+      // Check if the documents for this user are cached
+      const cachedDocuments = await redisClient?.get(cacheKey);
+      if (cachedDocuments) {
+          console.log('Returning cached Documents for user');
+          return res.status(200).json(JSON.parse(cachedDocuments));
+      }
+
+      // Fetch documents created by the logged-in user
+      const documents = await DocumentModel.find({ createdByUserId: user.id })
+          .populate('createdByUserId', 'name email')
+          .populate('category', 'categoryName')
+          .sort({ createdAt: -1 })
+          .lean();
+
+      if (documents.length === 0) {
+          return res.status(404).json({ message: 'No documents found for the current user' });
+      }
+
+      // Cache the user's documents
+      await redisClient?.set(cacheKey, JSON.stringify(documents), {
+          EX: 1800, // Cache expires in 30 minutes
+      });
+
+      res.status(200).json(documents);
+  } catch (error) {
+      next(error);
+  }
+};
+
    
