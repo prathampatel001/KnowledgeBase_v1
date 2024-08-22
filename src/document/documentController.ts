@@ -6,6 +6,7 @@ import { IUser } from '../user/userModel';
 import { z } from 'zod';
 import mongoose from 'mongoose';
 import { Contributor } from '../contributor/contributorModel';
+import redisClient from '../config/redisDB';
 
 // Zod schemas for input validation
 const documentSchema = z.object({
@@ -20,6 +21,7 @@ const documentSchema = z.object({
 });
 
 const updateDocumentSchema = documentSchema.partial(); // Allows partial updates
+
 
 // Create new Document
 export const addDocument = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
@@ -58,6 +60,8 @@ export const addDocument = async (req: AuthenticatedRequest, res: Response, next
     // Save the new Contributor entry
     const contributor = new Contributor(contributorData);
     await contributor.save();
+    // Delete the cached Pages
+    await redisClient?.del("allDocuments");
 
     res.status(201).json(savedDocument);
   } catch (error) {
@@ -97,6 +101,11 @@ export const deleteDocument = async (req: AuthenticatedRequest, res: Response, n
     // Proceed with the deletion
     await document.deleteOne();
 
+    await redisClient?.del("allDocuments");
+
+    const documentKey = `singleDocument:${id}`;
+    await redisClient?.del(documentKey);
+
     res.status(200).json({ message: 'Document deleted successfully' });
   } catch (error) {
     next(error);
@@ -135,54 +144,122 @@ export const updateDocument = async (req: AuthenticatedRequest, res: Response, n
     // Proceed with the update
     const updatedDocument = await DocumentModel.findByIdAndUpdate(id, updateData, { new: true });
 
+    if (!updatedDocument) {
+      return res.status(404).json({ message: 'Document not found' });
+
+    }
+    await redisClient?.del("allDocuments");
+    const documentKey = `singleDocument:${id}`;
+    await redisClient?.del(documentKey);
     res.status(200).json(updatedDocument);
   } catch (error) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ message: 'Invalid input', errors: error.errors });
     }
-    next(error);
   }
 };
 
 // Get a specific Document by ID
 export const getDocumentById = async (req: Request, res: Response, next: NextFunction) => {
-  const { id } = req.params;
+    try {
+      const { id } = req.params; // Extract the document ID from the request parameters
+      const cacheKey = `singleDocument:${id}`;
+      // Check if the document is cached
+      const cachedDocument = await redisClient?.get(cacheKey);
+      if (cachedDocument) {
+        console.log('Returning cached Document');
+        return res.status(200).json(JSON.parse(cachedDocument));
+      }
+       // Find the document by ID and populate the related fields
+       const document = await DocumentModel.findById(id)
+       .populate('createdByUserId', 'name email') 
+       .populate('category', 'categoryName'); 
+ 
+     if (!document) {
+       return res.status(404).send('Document not found'); 
+     }
 
-  try {
-    const document = await DocumentModel.findById(id)
-      .populate('createdByUserId', 'name email')
-      .populate('category', 'categoryName');
-
-    if (!document) {
-      return res.status(404).json({ message: 'Document not found' });
+      // Cache the document
+   await redisClient?.set(cacheKey, JSON.stringify(document), {
+     EX: 1800, // Cache expires in 30 minutes
+   });
+ 
+     res.status(200).json(document);
+    } catch (error) {
+      next(error); 
     }
-
-    // Check if the user is a contributor with editAccess level 0
-    const contributor = await Contributor.findOne({
-      documentId: document._id,
-    });
-
-    res.status(200).json({document,contributor});
-  } catch (error) {
-    next(error);
-  }
 };
 
 // Get all Documents
 export const getAllDocuments = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const documents = await DocumentModel.find()
-      .populate('createdByUserId', 'name email')
-      .populate('category', 'categoryName')
-      .sort({ createdAt: -1 })
-      .lean();
+    try {
 
-    if (documents.length === 0) {
-      return res.status(404).json({ message: 'No documents found' });
+      const cachedDocuments = await redisClient?.get('allDocuments');
+      if (cachedDocuments) {
+        console.log('Returning cached Documents');
+        return res.status(200).json(JSON.parse(cachedDocuments));
+      }
+
+      const documents = await DocumentModel.find()
+        .populate('createdByUserId', 'name email')
+        .populate('category', 'categoryName')
+        .sort({ createdAt: -1 })
+        .lean();
+  
+      if (documents.length === 0) {
+        return res.status(404).json({ message: 'No documents found' });
+      }
+
+      await redisClient?.set('allDocuments', JSON.stringify(documents), {
+        EX: 1800, // Cache expires in 30 minutes
+      });
+  
+      res.status(200).json(documents);
+    } catch (error) {
+      next(error);
     }
+  };
 
-    res.status(200).json(documents);
+
+  // Get all Documents for the logged-in user
+export const getUsersAllDocuments = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  try {
+      const user = req.user as IUser; // Assuming req.user contains the logged-in user's details
+
+      // Ensure user is authenticated
+      if (!user) {
+          return res.status(401).json({ message: 'Unauthorized: User not found or not authenticated.' });
+      }
+
+      const cacheKey = `allDocuments:${user.id}`;
+
+      // Check if the documents for this user are cached
+      const cachedDocuments = await redisClient?.get(cacheKey);
+      if (cachedDocuments) {
+          console.log('Returning cached Documents for user');
+          return res.status(200).json(JSON.parse(cachedDocuments));
+      }
+
+      // Fetch documents created by the logged-in user
+      const documents = await DocumentModel.find({ createdByUserId: user.id })
+          .populate('createdByUserId', 'name email')
+          .populate('category', 'categoryName')
+          .sort({ createdAt: -1 })
+          .lean();
+
+      if (documents.length === 0) {
+          return res.status(404).json({ message: 'No documents found for the current user' });
+      }
+
+      // Cache the user's documents
+      await redisClient?.set(cacheKey, JSON.stringify(documents), {
+          EX: 1800, // Cache expires in 30 minutes
+      });
+
+      res.status(200).json(documents);
   } catch (error) {
-    next(error);
+      next(error);
   }
 };
+
+   

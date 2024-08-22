@@ -16,4 +16,6 @@ const pageSchema = new Schema<PageInterface>({
   pageNestedUnder: [{ type: Schema.Types.ObjectId, ref: 'Page' }],
 }, { timestamps: true });
 
-export const Page = mongoose.model<PageInterface>('Page', pageSchema);
+
+const newPageName="page"
+export const Page = mongoose.model<PageInterface>(newPageName, pageSchema)

@@ -4,7 +4,8 @@ import { AuthenticatedRequest } from '../middlewares/authentication';
 import { IUser } from '../user/userModel';
 import { z } from 'zod';
 import mongoose from 'mongoose';
-import { Contributor, ContributorInterface } from '../contributor/contributorModel';
+import { Contributor } from '../contributor/contributorModel';
+import redisClient from "../config/redisDB"
 
 const pageSchema = z.object({
   title: z.string().min(1, 'Title is required'),
@@ -23,8 +24,10 @@ const pageSchema = z.object({
 // Create a partial schema for updates
 const updatePageSchema = pageSchema.partial();
 
-// Create new Page
-export const addPage = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+
+//Create new Page
+export const addPage = async (req:AuthenticatedRequest,res:Response,next:NextFunction)  => {
+
   try {
     const user = req.user as IUser;
 
@@ -62,6 +65,9 @@ export const addPage = async (req: AuthenticatedRequest, res: Response, next: Ne
     const savedPage = await page.save();
     console.log(savedPage);
 
+    // Delete the cached Pages
+    await redisClient?.del("allPages");
+
     res.status(201).json(savedPage);
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -87,6 +93,11 @@ export const deletePage = async (req: AuthenticatedRequest, res: Response, next:
     if (!page) {
       return res.status(404).json({ message: 'Page not found' });
     }
+    // Redis
+    redisClient?.del("allPages")
+    const pageKey = `singlePage:${id}`;
+    await redisClient?.del(pageKey)
+   
 
     // Fetch the contributor for the document
     const contributor = await Contributor.findOne({
@@ -156,6 +167,10 @@ export const updatePage = async (req: AuthenticatedRequest, res: Response, next:
       },
       { new: true }
     );
+    redisClient?.del("allPages")
+
+    const pageKey = `singlePage:${id}`;
+    await redisClient?.del(pageKey)
 
     res.status(200).json(updatedPage);
   } catch (error) {
@@ -177,6 +192,17 @@ export const getPageById = async (req: AuthenticatedRequest, res: Response, next
       return res.status(401).json({ message: 'Unauthorized: User not authenticated.' });
     }
 
+    
+    
+    const cacheKey = `singlePage:${id}`;
+
+      //Check if the Page is cached
+      const cachedPages = await redisClient?.get(cacheKey);
+      if (cachedPages) {
+        console.log('Returning cached Pages');
+        return res.status(200).json(JSON.parse(cachedPages));
+      }
+   
     // Find the page by ID
     const page = await Page.findById(id)
       .populate({
@@ -206,6 +232,12 @@ export const getPageById = async (req: AuthenticatedRequest, res: Response, next
       documentId: page.documentId,
       userId: user.id,
     });
+  
+     // Cache the pages
+     await redisClient?.set(cacheKey, JSON.stringify(page), {
+      EX: 1800, // Cache expires in 30 minutes
+    });
+  
 
     if (!contributor) {
       return res.status(403).json({ message: 'Forbidden: You are not a collaborator on this document.' });
@@ -221,6 +253,14 @@ export const getPageById = async (req: AuthenticatedRequest, res: Response, next
 export const getAllPages = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
     const user = req.user as IUser;
+   
+      //Check if the Page is cached
+    const cachedPages = await redisClient?.get('allPages');
+    if (cachedPages) {
+      console.log('Returning cached Pages');
+      return res.status(200).json(JSON.parse(cachedPages));
+    }
+    
 
     if (!user) {
       return res.status(401).json({ message: 'Unauthorized: User not authenticated.' });
@@ -261,6 +301,12 @@ export const getAllPages = async (req: AuthenticatedRequest, res: Response, next
     if (pages.length === 0) {
       return res.status(404).json({ message: 'No pages found for your documents.' });
     }
+
+      //Cache the Page
+    await redisClient?.set('allPages', JSON.stringify(pages), {
+      EX: 1800, // Cache expires in 30 minutes
+    });
+
 
     res.status(200).json(pages);
   } catch (error) {
