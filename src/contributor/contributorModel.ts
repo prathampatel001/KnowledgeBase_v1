@@ -1,10 +1,11 @@
+// contributorModel.ts
 import mongoose, { Document, Schema } from "mongoose";
 
 export interface ContributorInterface extends Document {
   documentId: mongoose.Types.ObjectId;
   userId: mongoose.Types.ObjectId;
   email?: string; 
-  editAccess: 0 | 1 | 2; // 0 for owner, 1 for edit, 2 for view only
+  editAccess: 0 | 1 | 2; // Use enum for editAccess
 }
 
 const contributorSchema = new Schema<ContributorInterface>(
@@ -27,7 +28,7 @@ const contributorSchema = new Schema<ContributorInterface>(
     },
     editAccess: {
       type: Number,
-      enum: [0, 1, 2], // 0 for owner, 1 for edit, 2 for view only
+      enum: [0,1,2], // Use enum values for validation
       required: true,
     },
   },

@@ -6,7 +6,7 @@ export const addUserValidation=[
     validationErrorHandler
 ]
 
-export const getUserUpdateByIdValidation = [
+export const updateUserByIdValidation = [
     ...validationSchema?.param?.mongooseId(['id']),
     validationErrorHandler
   ];

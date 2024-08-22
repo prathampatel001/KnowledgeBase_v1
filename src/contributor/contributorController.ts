@@ -8,20 +8,26 @@ import redisClient from '../config/redisDB';
 // Create new Contributor
 export const addContributor = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
+    const user = req.user as IUser;
 
-    const user = req.user as IUser; // Assuming req.user contains the logged-in user's details
-
-    // Ensure user is authenticated and has necessary permissions
     if (!user) {
       return res.status(401).json({ message: 'Unauthorized: User not found or not authenticated.' });
     }
 
-    // Create the new contributor, associating it with the logged-in user's ID
+    const { editAccess } = req.body;
+
+    // Ensure that editAccess is either 1 or 2
+    if (![1, 2].includes(editAccess)) {
+      return res.status(400).json({ message: 'Invalid editAccess value. Must be either 1 (edit) or 2 (view-only).' });
+    }
+
     const newContributor: ContributorInterface = {
       ...req.body,
-      userId: user.id, // Automatically associate the contributor with the logged-in user's ID
-      email: req.body.email || user.email, // Optionally use user's email if not provided in the body
+      userId: req.body.userId, // Get the userId from the frontend
+      email: req.body.email || user.email,
+      editAccess, // Assign the validated editAccess
     };
+
     const contributor = new Contributor(newContributor);
     const savedContributor = await contributor.save();
 
@@ -34,15 +40,31 @@ export const addContributor = async (req: AuthenticatedRequest, res: Response, n
   }
 };
 
+
 // Delete Contributor
-export const deleteContributor = async (req: Request, res: Response, next: NextFunction) => {
+export const deleteContributor = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   const { id } = req.params;
+  const user = req.user as IUser;
+
   try {
-    const deletedContributor = await Contributor.findByIdAndDelete(id);
-    if (!deletedContributor) {
+    if (!user) {
+      return res.status(401).json({ message: 'Unauthorized: User not authenticated.' });
+    }
+
+    // Find the contributor by ID
+    const contributor = await Contributor.findById(id);
+
+    if (!contributor) {
       return res.status(404).send('Contributor not found');
     }
 
+    // Check if the userId in the contributor matches the logged-in user's ID
+    if (contributor.userId.toString() !== user.id.toString()) {
+      return res.status(403).send('Forbidden: You do not have permission to delete this contributor');
+    }
+
+    // Delete the contributor
+    await Contributor.findByIdAndDelete(id);
     await redisClient?.del("allContributors");
     const contributorKey = `singleContributor:${id}`;
     await redisClient?.del(contributorKey);
@@ -54,15 +76,31 @@ export const deleteContributor = async (req: Request, res: Response, next: NextF
   }
 };
 
+
 // Update Contributor
-export const updateContributor = async (req: Request, res: Response, next: NextFunction) => {
+export const updateContributor = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   const { id } = req.params;
+  const user = req.user as IUser;
+
   try {
-    const updatedContributor = await Contributor.findByIdAndUpdate(id, req.body, { new: true });
-    if (!updatedContributor) {
+    if (!user) {
+      return res.status(401).json({ message: 'Unauthorized: User not authenticated.' });
+    }
+
+    // Find the contributor by ID
+    const contributor = await Contributor.findById(id);
+
+    if (!contributor) {
       return res.status(404).send('Contributor not found');
     }
 
+    // Check if the userId in the contributor matches the logged-in user's ID
+    if (contributor.userId.toString() !== user.id.toString()) {
+      return res.status(403).send('Forbidden: You do not have permission to update this contributor');
+    }
+
+    // Update the contributor with the new data
+    const updatedContributor = await Contributor.findByIdAndUpdate(id, req.body, { new: true });
     await redisClient?.del("allContributors");
     const contributorKey = `singleContributor:${id}`;
     await redisClient?.del(contributorKey);
@@ -72,6 +110,7 @@ export const updateContributor = async (req: Request, res: Response, next: NextF
     next(error);
   }
 };
+
 
 // Get a specific Contributor
 export const getContributorById = async (req: Request, res: Response, next: NextFunction) => {
