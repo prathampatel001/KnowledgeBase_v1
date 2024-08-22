@@ -3,6 +3,7 @@ import { z } from 'zod';
 import Category from '../category/categoryModel'; // Adjust the import path as needed
 import { IUser } from '../user/userModel'; // Adjust the import path as needed
 import { AuthenticatedRequest } from '../middlewares/authentication'; // Adjust the import path as needed
+import redisClient from '../config/redisDB';
 
 // Define Zod schema for category input validation
 const categorySchema = z.object({
@@ -36,6 +37,9 @@ export const createCategory = async (req: AuthenticatedRequest, res: Response) =
 
         // Save to database using Mongoose
         const savedCategory = await newCategory.save();
+
+        await redisClient?.del("allCategories");
+
         res.status(201).json(savedCategory);
     } catch (error) {
         console.error('Error creating category:', error); // Log the error for debugging purposes
@@ -46,22 +50,49 @@ export const createCategory = async (req: AuthenticatedRequest, res: Response) =
 // Get all categories
 export const getAllCategories = async (req: Request, res: Response) => {
     try {
+        
+        const cachedCategories = await redisClient?.get('allCategories');
+        if (cachedCategories) {
+            console.log('Returning cached categories');
+            return res.status(200).json(JSON.parse(cachedCategories));
+        }
+
         const categories = await Category.find().populate('categoryCreatedBy', 'name email'); // Populate the creator's details
+        
+        await redisClient?.set('allCategories', JSON.stringify(categories), {
+            EX: 1800, // Cache expires in 30 minutes
+        });
+
         res.status(200).json(categories);
-    } catch (error) {
-        res.status(500).json({ message: 'Error fetching categories', error: error});
-    }
+        } catch (error) {
+            res.status(500).json({ message: 'Error fetching categories', error: error});
+        }
 };
 
 // Get a single category by ID
 export const getCategoryById = async (req: Request, res: Response) => {
     try {
+        
         const { id } = req.params;
+
+        const cacheKey = `singleCategory:${id}`;
+
+        // Check if the category is cached
+        const cachedCategory = await redisClient?.get(cacheKey);
+        if (cachedCategory) {
+            console.log('Returning cached category');
+            return res.status(200).json(JSON.parse(cachedCategory));
+        }
+
         const category = await Category.findById(id).populate('categoryCreatedBy', 'name email');
 
         if (!category) {
             return res.status(404).json({ message: 'Category not found' });
         }
+
+        await redisClient?.set(cacheKey, JSON.stringify(category), {
+            EX: 1800, // Cache expires in 30 minutes
+        });
 
         res.status(200).json(category);
     } catch (error) {
@@ -86,6 +117,10 @@ export const updateCategory = async (req: Request, res: Response) => {
             return res.status(404).json({ message: 'Category not found' });
         }
 
+        await redisClient?.del("allCategories");
+        const categoryKey = `singleCategory:${id}`;
+        await redisClient?.del(categoryKey);
+
         res.status(200).json(updatedCategory);
     } catch (error) {
         res.status(500).json({ message: 'Error updating category', error: error});
@@ -101,6 +136,10 @@ export const deleteCategory = async (req: Request, res: Response) => {
         if (!deletedCategory) {
             return res.status(404).json({ message: 'Category not found' });
         }
+
+        await redisClient?.del("allCategories");
+        const categoryKey = `singleCategory:${id}`;
+        await redisClient?.del(categoryKey);
 
         res.status(200).json({ message: 'Category deleted successfully' });
     } catch (error) {
