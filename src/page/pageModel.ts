@@ -11,11 +11,11 @@ interface PageInterface extends Document {
 const pageSchema = new Schema<PageInterface>({
   title: { type: String, required: true },
   content: { type: Schema.Types.Mixed, required: true },
-  contributorId: [{ type: Schema.Types.ObjectId, ref: 'User', required: true }], // Update to array
+  contributorId: [{ type: Schema.Types.ObjectId, ref: 'Contributor' }], // Update to array
   documentId: { type: Schema.Types.ObjectId, ref: 'Document' },
   pageNestedUnder: [{ type: Schema.Types.ObjectId, ref: 'Page' }],
 }, { timestamps: true });
 
 
-const newPageName="page"
+const newPageName="Page"
 export const Page = mongoose.model<PageInterface>(newPageName, pageSchema)

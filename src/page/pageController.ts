@@ -248,19 +248,17 @@ export const getPageById = async (req: AuthenticatedRequest, res: Response, next
     next(error);
   }
 };
-
 // Get all Pages
 export const getAllPages = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
     const user = req.user as IUser;
-   
-      //Check if the Page is cached
+
+    // Check if the Page is cached
     const cachedPages = await redisClient?.get('allPages');
     if (cachedPages) {
       console.log('Returning cached Pages');
       return res.status(200).json(JSON.parse(cachedPages));
     }
-    
 
     if (!user) {
       return res.status(401).json({ message: 'Unauthorized: User not authenticated.' });
@@ -275,7 +273,7 @@ export const getAllPages = async (req: AuthenticatedRequest, res: Response, next
 
     // Extract document IDs where the user is a contributor
     const documentIds = contributors.map(contributor => contributor.documentId);
-
+    console.log(documentIds)
     // Find pages associated with the documents the user is a contributor on
     const pages = await Page.find({ documentId: { $in: documentIds } })
       .populate({
@@ -292,25 +290,22 @@ export const getAllPages = async (req: AuthenticatedRequest, res: Response, next
       })
       .populate('documentId')
       .populate({
-        path: 'userId',
-        select: 'name email',
+        path: 'contributorId',
+        select: 'userId editAccess', // Adjust the fields you need
       })
-      .sort({ createdAt: -1 })
-      .lean();
 
     if (pages.length === 0) {
       return res.status(404).json({ message: 'No pages found for your documents.' });
     }
-
-      //Cache the Page
+    // Cache the Page
     await redisClient?.set('allPages', JSON.stringify(pages), {
       EX: 1800, // Cache expires in 30 minutes
     });
 
-
-    res.status(200).json(pages);
+    res.status(200).json(pages);  
   } catch (error) {
     next(error);
   }
 };
+
 
