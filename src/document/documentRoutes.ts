@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { addDocument, deleteDocument, getAllDocuments, getDocumentById, getUsersAllDocuments, updateDocument } from "./documentController";
+import { addDocument, deleteDocument, getAllDocuments, getDocumentById, getAllDocumentsByUsers, updateDocument } from "./documentController";
 import { addDocumentValidation, deleteDocumentValidation, getDocumentByIdValidation, updateDocumentValidation } from "./documentValidator";
 
 const documentRoute = Router();
@@ -9,7 +9,7 @@ documentRoute.get('/document/get', getAllDocuments)
 documentRoute.get('/document/get/:id' ,getDocumentById)
 documentRoute.put('/document/update/:id' ,updateDocument)
 documentRoute.delete('/document/delete/:id' ,deleteDocument)
-documentRoute.get('/document/get/user',getUsersAllDocuments)
+documentRoute.get('/document/getbyuser',getAllDocumentsByUsers)
 
 
 export default documentRoute
