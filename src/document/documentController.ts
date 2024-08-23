@@ -196,11 +196,14 @@ export const getDocumentById = async (req: Request, res: Response, next: NextFun
 // Get all Documents
 export const getAllDocuments = async (req: Request, res: Response, next: NextFunction) => {
   try {
-
     const cachedDocuments = await redisClient?.get('allDocuments');
     if (cachedDocuments) {
       console.log('Returning cached Documents');
-      return res.status(200).json(JSON.parse(cachedDocuments));
+      const parsedDocuments = JSON.parse(cachedDocuments);
+      return res.status(200).json({
+        documents: parsedDocuments,   // Array of documents
+        count: parsedDocuments.length // Total count after the array
+      });
     }
 
     const documents = await DocumentModel.find()
@@ -213,58 +216,70 @@ export const getAllDocuments = async (req: Request, res: Response, next: NextFun
       return res.status(404).json({ message: 'No documents found' });
     }
 
+    // Cache the documents in Redis
     await redisClient?.set('allDocuments', JSON.stringify(documents), {
       EX: 1800, // Cache expires in 30 minutes
     });
 
-    res.status(200).json(documents);
+    // Respond with documents and the count
+    res.status(200).json({
+      documents: documents, // Array of documents
+      count: documents.length // Total count after the array
+    });
   } catch (error) {
     next(error);
   }
 };
+
 
 // Get all Documents for the logged-in user
 export const getAllDocumentsByUsers = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
     const user = req.user as IUser;
 
-    console.log("user",user);
+    console.log("user", user);
     if (!user) {
       return res.status(401).json({ message: 'Unauthorized: User not authenticated.' });
     }
 
-    console.log("user.id",user.id);
+    console.log("user.id", user.id);
     
     const cacheKey = `allDocuments:${user.id}`;
-    console.log("cacheKey",cacheKey);
+    console.log("cacheKey", cacheKey);
     
     const cachedDocuments = await redisClient?.get(cacheKey);
     if (cachedDocuments) {
       console.log('Returning cached Documents for user');
-      return res.status(200).json(JSON.parse(cachedDocuments));
-    } else{
-    const documents = await DocumentModel.find({ createdByUserId: user.id })
-      .populate('createdByUserId', 'name email')
-      .populate('category', 'categoryName')
-      .sort({ createdAt: -1 })
-      .lean();
+      const parsedDocuments = JSON.parse(cachedDocuments);
+      return res.status(200).json({
+        documents: parsedDocuments,   // Array of documents
+        count: parsedDocuments.length // Total count after the array
+      });
+    } else {
+      const documents = await DocumentModel.find({ createdByUserId: user.id })
+        .populate('createdByUserId', 'name email')
+        .populate('category', 'categoryName')
+        .sort({ createdAt: -1 })
+        .lean();
 
-    if (documents.length === 0) {
-      return res.status(404).json({ message: 'No documents found for the current user' });
+      if (documents.length === 0) {
+        return res.status(404).json({ message: 'No documents found for the current user' });
+      }
+
+      await redisClient?.set(cacheKey, JSON.stringify(documents), {
+        EX: 1800, // Cache expires in 30 minutes
+      });
+
+      res.status(200).json({
+        documents: documents, // Array of documents
+        count: documents.length // Total count after the array
+      });
     }
-
-    await redisClient?.set(cacheKey, JSON.stringify(documents), {
-      EX: 1800, // Cache expires in 30 minutes
-    });
-
-    res.status(200).json({ user, documents });
-    }
-
-
   } catch (error) {
     next(error);
   }
 };
+
 
 
 

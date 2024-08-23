@@ -142,30 +142,39 @@ export const getContributorById = async (req: Request, res: Response, next: Next
 
 // Get all Contributors with optional email search
 export const getAllContributors = async (req: Request, res: Response, next: NextFunction) => {
-    const { email } = req.query;
-  
-    try {
-      const cacheKey = email ? `allContributors:${email}` : 'allContributors';
+  const { email } = req.query;
+
+  try {
+    const cacheKey = email ? `allContributors:${email}` : 'allContributors';
 
     // Check if the contributors are cached
     const cachedContributors = await redisClient?.get(cacheKey);
     if (cachedContributors) {
       console.log('Returning cached Contributors');
-      return res.status(200).json(JSON.parse(cachedContributors));
-    }
-      // If email query parameter is provided, search by email
-      const query = email ? { email: new RegExp(email as string, 'i') } : {};
-  
-      const contributors = await Contributor.find(query);
-
-        // Cache the contributors
-      await redisClient?.set(cacheKey, JSON.stringify(contributors), {
-        EX: 1800, // Cache expires in 30 minutes
+      const parsedContributors = JSON.parse(cachedContributors);
+      return res.status(200).json({
+        contributors: parsedContributors,    // Array of contributors
+        count: parsedContributors.length     // Total count after the array
       });
-      
-      res.status(200).json(contributors);
-    } catch (error) {
-      next(error);
     }
-  };
+
+    // If email query parameter is provided, search by email
+    const query = email ? { email: new RegExp(email as string, 'i') } : {};
   
+    const contributors = await Contributor.find(query);
+
+    // Cache the contributors
+    await redisClient?.set(cacheKey, JSON.stringify(contributors), {
+      EX: 1800, // Cache expires in 30 minutes
+    });
+    
+    // Respond with contributors and the count
+    res.status(200).json({
+      contributors: contributors,   // Array of contributors
+      count: contributors.length     // Total count after the array
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
