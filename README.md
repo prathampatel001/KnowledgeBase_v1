@@ -669,7 +669,7 @@ Output:
 <h3>Delete Page(Method : Delete)</h3>
 
 ```
-http://localhost:1234/api/pages/:id
+{{baseUrl}}/pages/:id
 ```
 
   Output:
@@ -716,6 +716,74 @@ http://localhost:1234/api/pages/:id
   <Hr color="Beige">
 
   ## Coontributors
+
+  <h3>Get all Contributor(Method : Get)</h3>
+
+  ```
+ {{baseUrl}}/contributor
+  ```
+
+Input:
+```
+    {
+        "contributors": [
+            {
+                "_id": "66c6ee4d837ed55342154175",
+                "documentId": "66c6ee4d837ed55342154173",
+                "userId": "66c5aaf48e02206de4ea0081",
+                "email": "nikhil@gmail.com",
+                "editAccess": 0,
+                "createdAt": "2024-08-22T07:52:45.619Z",
+                "updatedAt": "2024-08-22T07:52:45.619Z",
+                "__v": 0
+            },
+            {
+                "_id": "66c6ee75837ed55342154179",
+                "documentId": "66c6ee75837ed55342154177",
+                "userId": "66c5aaf48e02206de4ea0081",
+                "email": "nikhil@gmail.com",
+                "editAccess": 0,
+                "createdAt": "2024-08-22T07:53:25.608Z",
+                "updatedAt": "2024-08-22T07:53:25.608Z",
+                "__v": 0
+            },
+            count:2
+        ]
+    }
+```
+
+ <h3>Create Contributor(Method : Post)</h3>
+
+  ```
+ {{baseUrl}}/contributor
+  ```
+
+  Input:
+  ```
+    {
+    "documentId": "66c835d340f1ad3b287f0248",
+    "userId":"66c827131bb888de6f316cdd",
+    "editAccess": 1
+    }
+  ```
+
+  Output:
+```
+    {
+        "documentId": "66c835d340f1ad3b287f0248",
+        "userId": "66c827131bb888de6f316cdd",
+        "email": "nikhil@gmail.com",
+        "editAccess": 1,
+        "_id": "66c8721e8330e15377d2d553",
+        "createdAt": "2024-08-23T11:27:26.788Z",
+        "updatedAt": "2024-08-23T11:27:26.788Z",
+        "__v": 0
+    }
+```
+
+
+
+
 
   <Hr color="Beige">
 

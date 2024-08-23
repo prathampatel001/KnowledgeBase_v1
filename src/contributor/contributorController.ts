@@ -5,6 +5,7 @@ import { IUser } from '../user/userModel';
 import { AuthenticatedRequest } from '../middlewares/authentication';
 import redisClient from '../config/redisDB';
 
+
 // Create new Contributor
 export const addContributor = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
@@ -14,24 +15,24 @@ export const addContributor = async (req: AuthenticatedRequest, res: Response, n
       return res.status(401).json({ message: 'Unauthorized: User not found or not authenticated.' });
     }
 
-    const { editAccess } = req.body;
+    const { documentId, userId, email, editAccess } = req.body;
 
-    // Ensure that editAccess is either 1 or 2
-    if (![1, 2].includes(editAccess)) {
-      return res.status(400).json({ message: 'Invalid editAccess value. Must be either 1 (edit) or 2 (view-only).' });
-    }
+    // Log the request body for debugging purposes
+    console.log('Request Body:', req.body);
 
-    const newContributor: ContributorInterface = {
-      ...req.body,
-      userId: req.body.userId, // Get the userId from the frontend
-      email: req.body.email || user.email,
+  
+    // Create the new contributor
+    const newContributor = {
+      documentId,
+      userId, // Get the userId from the frontend
+      email: email || user.email, // Use the provided email or fallback to user's email
       editAccess, // Assign the validated editAccess
     };
 
     const contributor = new Contributor(newContributor);
     const savedContributor = await contributor.save();
 
-
+    // Clear the relevant cache
     await redisClient?.del("allContributors");
 
     res.status(201).json(savedContributor);
@@ -39,6 +40,9 @@ export const addContributor = async (req: AuthenticatedRequest, res: Response, n
     next(error);
   }
 };
+
+
+
 
 
 // Delete Contributor
@@ -142,39 +146,30 @@ export const getContributorById = async (req: Request, res: Response, next: Next
 
 // Get all Contributors with optional email search
 export const getAllContributors = async (req: Request, res: Response, next: NextFunction) => {
-  const { email } = req.query;
-
-  try {
-    const cacheKey = email ? `allContributors:${email}` : 'allContributors';
+    const { email } = req.query;
+  
+    try {
+      const cacheKey = email ? `allContributors:${email}` : 'allContributors';
 
     // Check if the contributors are cached
     const cachedContributors = await redisClient?.get(cacheKey);
     if (cachedContributors) {
       console.log('Returning cached Contributors');
-      const parsedContributors = JSON.parse(cachedContributors);
-      return res.status(200).json({
-        contributors: parsedContributors,    // Array of contributors
-        count: parsedContributors.length     // Total count after the array
-      });
+      return res.status(200).json(JSON.parse(cachedContributors));
     }
-
-    // If email query parameter is provided, search by email
-    const query = email ? { email: new RegExp(email as string, 'i') } : {};
+      // If email query parameter is provided, search by email
+      const query = email ? { email: new RegExp(email as string, 'i') } : {};
   
-    const contributors = await Contributor.find(query);
+      const contributors = await Contributor.find(query);
 
-    // Cache the contributors
-    await redisClient?.set(cacheKey, JSON.stringify(contributors), {
-      EX: 1800, // Cache expires in 30 minutes
-    });
-    
-    // Respond with contributors and the count
-    res.status(200).json({
-      contributors: contributors,   // Array of contributors
-      count: contributors.length     // Total count after the array
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
+        // Cache the contributors
+      await redisClient?.set(cacheKey, JSON.stringify(contributors), {
+        EX: 1800, // Cache expires in 30 minutes
+      });
+      
+      res.status(200).json(contributors);
+    } catch (error) {
+      next(error);
+    }
+  };
+  
