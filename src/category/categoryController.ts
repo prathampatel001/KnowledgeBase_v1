@@ -50,24 +50,33 @@ export const createCategory = async (req: AuthenticatedRequest, res: Response) =
 // Get all categories
 export const getAllCategories = async (req: Request, res: Response) => {
     try {
-        
         const cachedCategories = await redisClient?.get('allCategories');
         if (cachedCategories) {
             console.log('Returning cached categories');
-            return res.status(200).json(JSON.parse(cachedCategories));
+            const parsedCategories = JSON.parse(cachedCategories);
+            return res.status(200).json({
+                categories: parsedCategories,   // Array of categories from cache
+                count: parsedCategories.length, 
+            });
         }
 
         const categories = await Category.find().populate('categoryCreatedBy', 'name email'); // Populate the creator's details
+        const count = await Category.countDocuments(); // Get the count of documents in the collection
         
         await redisClient?.set('allCategories', JSON.stringify(categories), {
             EX: 1800, // Cache expires in 30 minutes
         });
 
-        res.status(200).json(categories);
-        } catch (error) {
-            res.status(500).json({ message: 'Error fetching categories', error: error});
-        }
+        res.status(200).json({
+            categories: categories,
+            count: count
+        });
+
+    } catch (error) {
+        res.status(500).json({ message: 'Error fetching categories', error: error });
+    }
 };
+
 
 // Get a single category by ID
 export const getCategoryById = async (req: Request, res: Response) => {
