@@ -15,7 +15,9 @@ app.use(express.json());
 app.use(cors());
 
 const basePath = "/api";
-
+app.get(`/test`, (req, res, next) => {
+  res.json({ message: "Hello World" });
+});
 app.use(basePath, authRoute);
 app.use(authenticate)
 app.use(basePath,pageRoutes)
@@ -24,9 +26,7 @@ app.use(basePath,documentRoutes)
 app.use(basePath, categoryRoute)
 app.use(basePath, userRoute);
 
-app.get(`/test`, (req, res, next) => {
-  res.json({ message: "Hello World" });
-});
+
 
 // global error handle
 app.use(globalErrorHandler);
