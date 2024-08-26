@@ -1,6 +1,5 @@
 import { Router } from "express";
 import { addDocument, deleteDocument, getAllDocuments, getDocumentById, getAllDocumentsByUsers, updateDocument } from "./documentController";
-import { addDocumentValidation, deleteDocumentValidation, getDocumentByIdValidation, updateDocumentValidation } from "./documentValidator";
 
 const documentRoute = Router();
 
